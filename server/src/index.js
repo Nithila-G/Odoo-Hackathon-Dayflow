@@ -16,6 +16,7 @@ import attendanceRoutes from './routes/attendance.js';
 import leaveRoutes from './routes/leave.js';
 import salaryRoutes from './routes/salary.js';
 import uploadRoutes from './routes/uploads.js';
+import healthRouter from './routes/health.js';
 
 const app = express();
 const httpServer = createServer(app);
@@ -29,6 +30,7 @@ app.use(express.json());
 app.use('/uploads', express.static('src/uploads'));
 
 app.get('/health', (req, res) => res.json({ ok: true }));
+app.use('/api', healthRouter);
 
 app.use('/auth', authRoutes);
 app.use('/employees', employeeRoutes);
