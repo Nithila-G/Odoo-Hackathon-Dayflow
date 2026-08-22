@@ -1,97 +1,130 @@
 # Dayflow — HRMS
 
-Every workday, perfectly aligned.
+> **Every workday, perfectly aligned.**  
+> Full-stack HRMS built for the Odoo Hackathon: React + Tailwind frontend, Express + PostgreSQL backend, real-time presence via Socket.io, video background UI, and automatic salary breakdown calculator.
 
-Full-stack HRMS built for the Odoo Hackathon: React + Tailwind frontend, Express +
-PostgreSQL backend (self-hosted, no MongoDB/Prisma/BaaS), real-time presence via
-Socket.io, local-disk file storage. See [`docs/PRD.md`](./docs/PRD.md) for the full
-spec this was built against.
+---
 
-## Project structure
+## 🚀 Quick Start Guide
 
-```
-dayflow/
-  server/     Express API + Postgres schema/migrations
-  client/     React (Vite) + Tailwind frontend
-  docs/       PRD and requirements
-  docker-compose.yml   spins up just Postgres
-```
+### Prerequisites
+- **Node.js**: v18+ or v20+
 
-## Prerequisites
+---
 
-- Node.js 20+
-- Docker (for Postgres) — or a local Postgres 16 instance if you'd rather not use Docker
+### Option A: Standard Run (Recommended — No Docker Required)
 
-## 1. Start the database
-
+#### 1. Start Database (Embedded PostgreSQL)
+Open terminal in `dayflow/`:
 ```bash
-docker compose up -d
+node server/start-postgres.js
 ```
+*This automatically boots PostgreSQL on `localhost:5432`, creates the `dayflow` database, and applies all database schema migrations.*
 
-This starts Postgres on `localhost:5432` and automatically applies
-`server/migrations/001_init.sql` on first boot (via Postgres's `docker-entrypoint-initdb.d`).
-
-If you're not using Docker, create a `dayflow` database yourself and run:
-```bash
-psql -U postgres -d dayflow -f server/migrations/001_init.sql
-```
-
-## 2. Start the backend
-
+#### 2. Start Backend API Server
+Open a new terminal in `dayflow/server/`:
 ```bash
 cd server
-cp .env.example .env   # defaults already point at the Docker Postgres above
 npm install
 npm run dev
 ```
+*Backend runs live on `http://localhost:4000`. Health check: `http://localhost:4000/api/health`*
 
-API runs on `http://localhost:4000`. Health check: `GET /health`.
-
-## 3. Start the frontend
-
+#### 3. Start Frontend Client
+Open a new terminal in `dayflow/client/`:
 ```bash
 cd client
 npm install
 npm run dev
 ```
+*Frontend runs live on `http://localhost:5173`*
 
-App runs on `http://localhost:5173` and proxies `/api`, `/uploads`, and `/socket.io`
-to the backend — no CORS config needed in dev.
+---
 
-## 4. Try it out
+### Option B: Run with Docker Compose
 
-1. Go to `http://localhost:5173/signup` and create your company + admin account.
-   Note the auto-generated Login ID shown after signup.
-2. From the Employees page, click **+ New** to create an employee — their Login ID
-   and a temporary password are generated automatically (shown once in the modal).
-3. Log out and log back in as that employee to see the Employee view (no Salary Info
-   edit access, no visibility into anyone else's salary).
+If you have Docker Desktop running:
+```bash
+# 1. Start Postgres database via Docker
+docker compose up -d
 
-## Environment variables (`server/.env`)
+# 2. Start backend
+cd server
+npm install
+npm run dev
 
-| Variable | Purpose | Default |
-|---|---|---|
-| `DATABASE_URL` | Postgres connection string | `postgresql://postgres:postgres@localhost:5432/dayflow` |
-| `JWT_SECRET` | Signs access tokens — change this for anything beyond local dev | — |
-| `PORT` | API port | `4000` |
-| `CLIENT_ORIGIN` | Allowed CORS origin | `http://localhost:5173` |
+# 3. Start frontend
+cd client
+npm install
+npm run dev
+```
 
-## What's implemented
+---
 
-- Company sign-up + auto-generated employee Login IDs (`OIJODO20260001` format)
-- Role-based access (Admin/HR vs Employee), enforced server-side on every route
-- Employee directory with live presence dots (Socket.io)
-- Check-in/check-out with computed work hours
-- Attendance history (self) and all-employees day view (Admin/HR)
-- Time-off requests with validation (balance checks, overlap checks, sick-leave
-  attachment requirement) and an Admin/HR approve/reject workflow
-- Salary Info tab: auto-computed components (Basic → HRA/Standard Allowance/
-  Performance Bonus/LTA as % of Basic, Fixed Allowance as remainder), read-only
-  for employees, editable by Admin/HR only
-- Resume tab (About/skills/certifications) and Private Info tab (bank details, etc.)
+## 🔑 Key Features Implemented
 
-## Not yet implemented (see `docs/PRD.md` §17)
+1. **Company Onboarding & Sign Up**:
+   - Live company logo upload with image preview (`POST /auth/upload-logo`).
+   - Secure eye visibility toggles (`👁`) for password fields.
+   - Pexels HD video background with responsive glassmorphism UI card overlays.
+   - Auto-generated Login IDs (e.g. `SINIK20260001`).
 
-Payslip PDF generation, email/notification alerts, analytics dashboard, and the
-public-holiday calendar are out of scope for this pass — flagged as future work
-in the PRD.
+2. **Employee Directory & Live Attendance**:
+   - Card grid view showing employee photos, job positions, and department tags.
+   - Live Socket.io status indicators:
+     - 🟢 **Present** (Checked IN)
+     - ✈️ **On Leave**
+     - 🟡 **Absent**
+   - Header **Check IN →** / **Check Out →** button with real-time status dot updates.
+
+3. **Profile Personalization & Interactive Resume**:
+   - Profile avatar image upload.
+   - Interactive **+ Add Skill** and **+ Add Certification** pills with delete controls (`✕`).
+   - Private information editor (financial details, contact info, employee metadata).
+
+4. **Automatic Salary Component Calculator**:
+   - Monthly Wage input (e.g., ₹50,000).
+   - Real-time percentage component computation:
+     - **Basic**: 50% of Month Wage
+     - **HRA**: 50% of Basic
+     - **Standard Allowance**: 16.67% of Basic
+     - **Performance Bonus**: 8.33% of Basic
+     - **LTA**: 8.33% of Basic
+     - **Fixed Allowance**: Remainder component
+     - **Provident Fund (PF)**: 12% (Employee & Employer)
+     - **Professional Tax**: ₹200
+
+5. **Time Off & Leave Approval Workflow**:
+   - Employee leave requests with medical attachment uploads for sick leaves.
+   - Admin/HR approval & rejection dashboard workflow.
+
+---
+
+## 📁 Project Structure
+
+```
+dayflow/
+├── client/                 # React (Vite) + Tailwind CSS Frontend
+│   ├── public/videos/      # HD Background Video Assets
+│   └── src/
+│       ├── components/     # NavBar, AppLayout, BackgroundVideo, SalaryTab
+│       ├── pages/          # SignIn, SignUp, Employees, Profile, Attendance, TimeOff
+│       └── utils/          # Date & Time Utility Helpers
+├── server/                 # Express API + PostgreSQL Backend
+│   ├── migrations/         # 001_init.sql Database Schema
+│   ├── start-postgres.js   # Embedded Postgres Server Launcher
+│   └── src/
+│       ├── middleware/     # Auth & Role Enforcement Middleware
+│       └── routes/         # Auth, Employees, Attendance, Leave, Salary, Health
+└── docs/                   # PRD and System Architecture Documents
+```
+
+---
+
+## 👥 Team Credits
+
+Built with ❤️ for the Odoo Hackathon by **Team Dayflow**:
+- **Nithila G** (`@Nithila-G`)
+- **Tharunika** (`@tharunikanagendran`)
+- **Rahul** (`@Rahul-1812`)
+- **Nithitha K** (`@nithi-05K`)
