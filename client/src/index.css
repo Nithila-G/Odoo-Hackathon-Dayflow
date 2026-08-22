@@ -1,3 +1,10 @@
+/* Dayflow Custom Glassmorphism Theme Variables */
+:root {
+  --dayflow-glass-bg: rgba(255, 255, 255, 0.9);
+  --dayflow-glass-border: rgba(255, 255, 255, 0.6);
+  --dayflow-shadow-lg: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
 @import "tailwindcss";
 
 @theme {
