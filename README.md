@@ -21,9 +21,9 @@ A full-stack Human Resource Management System built for the **Odoo Hackathon** �
 
 ## What This Is
 
-Managing a team shouldn't mean juggling spreadsheets for attendance, chasing emails for leave approvals, or manually computing salary breakdowns every month. **Dayflow** brings it all into one place.
+Managing a team involves tracking attendance, processing leave approvals, and computing monthly salary breakdowns. Dayflow combines these HR tasks into a single platform.
 
-Built from scratch in under 48 hours for the Odoo Hackathon, Dayflow is a production-ready HRMS that handles the full employee lifecycle — from onboarding a new company to approving a sick leave request — with a real-time presence system, auto-generated employee IDs, and a salary calculator that does the maths so you don't have to.
+Built in 8 hours for the Odoo Hackathon, Dayflow is an HRMS covering employee onboarding, directory management, real-time check-in attendance tracking, leave request approvals, auto-generated employee IDs, and structured salary calculations.
 
 ---
 
