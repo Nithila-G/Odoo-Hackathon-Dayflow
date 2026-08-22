@@ -201,7 +201,7 @@ The demo covers company sign-up, employee creation with auto-generated IDs, live
 
 ## Team
 
-Built with ❤️ for the **Odoo Hackathon** by Team Dayflow:
+Built with ❤️ for the **Odoo Hackathon** by Team :
 
 | Member | GitHub |
 |:---|:---|
