@@ -2,7 +2,13 @@ import express from 'express';
 import cors from 'cors';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import fs from 'fs';
+import path from 'path';
 import 'dotenv/config';
+
+// Ensure upload directory exists
+const uploadsDir = path.resolve('src/uploads');
+fs.mkdirSync(uploadsDir, { recursive: true });
 
 import authRoutes from './routes/auth.js';
 import employeeRoutes from './routes/employees.js';

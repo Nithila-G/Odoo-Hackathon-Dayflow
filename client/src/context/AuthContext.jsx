@@ -46,7 +46,9 @@ export function AuthProvider({ children }) {
     setUser(null);
   }
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'hr';
+  const roleLower = user?.role?.toLowerCase() || '';
+  const jobLower = user?.job_position?.toLowerCase() || '';
+  const isAdmin = roleLower === 'admin' || roleLower === 'hr' || jobLower.includes('admin') || jobLower.includes('hr');
 
   return (
     <AuthContext.Provider value={{ user, loading, login, signup, logout, refreshMe, isAdmin }}>

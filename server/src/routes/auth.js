@@ -7,8 +7,49 @@ import { buildLoginId, companyInitials } from '../utils/loginId.js';
 
 const router = Router();
 
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+const ALLOWED_LOGOS = {
+  'image/png': '.png',
+  'image/jpeg': '.jpg',
+  'image/webp': '.webp',
+  'image/svg+xml': '.svg',
+};
+
+const logoStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const uploadDir = path.resolve('src/uploads');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const ext = ALLOWED_LOGOS[file.mimetype] || path.extname(file.originalname);
+    cb(null, `logo-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const uploadLogoMulter = multer({
+  storage: logoStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+  fileFilter: (req, file, cb) => {
+    if (!ALLOWED_LOGOS[file.mimetype]) {
+      return cb(new Error('Only PNG, JPG, WEBP, or SVG images are allowed for company logo'));
+    }
+    cb(null, true);
+  },
+});
+
+// POST /auth/upload-logo — upload company logo image before signup
+router.post('/upload-logo', uploadLogoMulter.single('logo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No logo image provided' });
+  res.status(201).json({ url: `/uploads/${req.file.filename}` });
+});
+
 const signupSchema = z.object({
   companyName: z.string().min(2),
+  logoUrl: z.string().optional().nullable(),
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().min(6).optional().or(z.literal('')),
@@ -27,7 +68,7 @@ router.post('/signup', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: parsed.error.issues[0].message });
   }
-  const { companyName, name, email, phone, password } = parsed.data;
+  const { companyName, logoUrl, name, email, phone, password } = parsed.data;
 
   const client = await pool.connect();
   try {
@@ -41,8 +82,8 @@ router.post('/signup', async (req, res) => {
 
     const initials = companyInitials(companyName);
     const company = await client.query(
-      `INSERT INTO companies (name, name_initials) VALUES ($1, $2) RETURNING id`,
-      [companyName, initials]
+      `INSERT INTO companies (name, name_initials, logo_url) VALUES ($1, $2, $3) RETURNING id`,
+      [companyName, initials, logoUrl || null]
     );
     const companyId = company.rows[0].id;
 
@@ -128,8 +169,11 @@ router.post('/login', async (req, res) => {
 router.get('/me', requireAuth, async (req, res) => {
   const result = await query(
     `SELECT u.id, u.login_id, u.email, u.role, u.must_change_password,
-            e.id AS employee_id, e.first_name, e.last_name, e.profile_picture_url
-     FROM users u JOIN employees e ON e.user_id = u.id
+            e.id AS employee_id, e.first_name, e.last_name, e.profile_picture_url,
+            c.name AS company_name, c.logo_url AS company_logo_url, c.name_initials AS company_initials
+     FROM users u
+     JOIN employees e ON e.user_id = u.id
+     JOIN companies c ON c.id = u.company_id
      WHERE u.id = $1`,
     [req.user.sub]
   );

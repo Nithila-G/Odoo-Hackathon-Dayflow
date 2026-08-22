@@ -18,7 +18,8 @@ router.post('/check-in', async (req, res) => {
     [employeeId]
   );
   if (existing.rows.length && existing.rows[0].check_in_time && !existing.rows[0].check_out_time) {
-    return res.status(409).json({ error: 'Already checked in' });
+    req.app.get('io')?.emit('presence:update', { employeeId, status: 'present' });
+    return res.json(existing.rows[0]);
   }
   const result = await query(
     `INSERT INTO attendance (employee_id, date, check_in_time, status)
@@ -38,18 +39,18 @@ router.post('/check-out', async (req, res) => {
     'SELECT * FROM attendance WHERE employee_id = $1 AND date = CURRENT_DATE',
     [employeeId]
   );
-  if (!existing.rows.length || !existing.rows[0].check_in_time) {
-    return res.status(409).json({ error: 'Not checked in yet' });
-  }
 
   const salary = await query('SELECT working_days_per_week, break_time_hours FROM salary_structures WHERE employee_id = $1', [employeeId]);
   const breakHours = Number(salary.rows[0]?.break_time_hours || 0);
 
   const result = await query(
-    `UPDATE attendance SET check_out_time = now(),
-       work_hours = GREATEST(EXTRACT(EPOCH FROM (now() - check_in_time)) / 3600.0 - $2, 0),
-       extra_hours = GREATEST(EXTRACT(EPOCH FROM (now() - check_in_time)) / 3600.0 - $2 - 8, 0)
-     WHERE employee_id = $1 AND date = CURRENT_DATE RETURNING *`,
+    `INSERT INTO attendance (employee_id, date, check_in_time, check_out_time, status, work_hours)
+     VALUES ($1, CURRENT_DATE, now(), now(), 'present', 0)
+     ON CONFLICT (employee_id, date) DO UPDATE SET
+       check_out_time = now(),
+       work_hours = GREATEST(EXTRACT(EPOCH FROM (now() - COALESCE(attendance.check_in_time, now()))) / 3600.0 - $2, 0),
+       extra_hours = GREATEST(EXTRACT(EPOCH FROM (now() - COALESCE(attendance.check_in_time, now()))) / 3600.0 - $2 - 8, 0)
+     RETURNING *`,
     [employeeId, breakHours]
   );
   req.app.get('io')?.emit('presence:update', { employeeId, status: 'checked_out' });
@@ -61,7 +62,7 @@ router.get('/me', async (req, res) => {
   const employeeId = await getEmployeeId(req.user.sub);
   const month = req.query.month || new Date().toISOString().slice(0, 7);
   const result = await query(
-    `SELECT * FROM attendance WHERE employee_id = $1
+    `SELECT *, to_char(date, 'YYYY-MM-DD') AS formatted_date FROM attendance WHERE employee_id = $1
      AND to_char(date, 'YYYY-MM') = $2 ORDER BY date DESC`,
     [employeeId, month]
   );

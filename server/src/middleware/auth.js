@@ -22,10 +22,12 @@ export function requireAuth(req, res, next) {
   }
 }
 
-// Restricts a route to specific roles, e.g. requireRole('admin', 'hr')
+// Restricts a route to specific roles (case-insensitive), e.g. requireRole('admin', 'hr')
 export function requireRole(...roles) {
   return (req, res, next) => {
-    if (!req.user || !roles.includes(req.user.role)) {
+    const userRole = req.user?.role?.toLowerCase();
+    const allowed = roles.map((r) => r.toLowerCase());
+    if (!userRole || !allowed.includes(userRole)) {
       return res.status(403).json({ error: 'Insufficient permissions' });
     }
     next();

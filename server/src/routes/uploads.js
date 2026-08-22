@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 import { requireAuth } from '../middleware/auth.js';
 
 const ALLOWED = {
@@ -10,7 +11,11 @@ const ALLOWED = {
 };
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, path.resolve('src/uploads')),
+  destination: (req, file, cb) => {
+    const uploadDir = path.resolve('src/uploads');
+    fs.mkdirSync(uploadDir, { recursive: true });
+    cb(null, uploadDir);
+  },
   filename: (req, file, cb) => {
     const ext = ALLOWED[file.mimetype] || path.extname(file.originalname);
     cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);

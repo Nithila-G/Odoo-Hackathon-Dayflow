@@ -1,6 +1,18 @@
+# Dependencies
 node_modules/
+**/node_modules/
+
+# Environment & Config
 .env
+.env.local
 *.log
+
+# OS & Temp
 .DS_Store
+Thumbs.db
+server/data/
+.tmp/
+
+# Uploads directory contents except .gitkeep
 server/src/uploads/*
 !server/src/uploads/.gitkeep
